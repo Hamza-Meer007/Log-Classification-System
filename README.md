@@ -63,13 +63,40 @@ This project implements a hybrid log classification system, combining three comp
 
 ---
 
+
 ## Usage
 
+### 1. Single Log Classification (API)
+You can classify a single log message by sending a POST request to the `/classify/` endpoint with a JSON payload:
+
+```
+POST http://127.0.0.1:8000/classify/
+Content-Type: application/json
+
+{
+   "log": "Email service experiencing issues with sending"
+}
+```
+The response will be:
+```
+{
+   "result": "Error"
+}
+```
+
+### 2. Batch Log Classification (CSV Upload)
 Upload a CSV file containing logs to the FastAPI endpoint for classification. Ensure the file has the following columns:
 - `source`
 - `log_message`
 
 The output will be a CSV file with an additional column `target_label`, which represents the classified label for each log entry.
+
+### 3. Frontend Usage
+You can use the provided frontend (`frontend/index.html`) for a user-friendly interface:
+- Paste a single log message or upload a CSV file.
+- Click "Classify" to get instant results or download the classified CSV.
+
+**Note:** Make sure the backend server is running and accessible at `http://127.0.0.1:8000` for the frontend to work.
 
 ---
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Classification System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 min-h-screen flex flex-col">
+    <header class="py-6 bg-opacity-80 bg-blue-950 shadow-lg">
+        <div class="container mx-auto flex items-center justify-between px-6">
+            <h1 class="text-3xl font-bold text-white tracking-wide">Log Classification System</h1>
+            <span class="text-lg text-gray-300 font-semibold">AI Powered</span>
+        </div>
+    </header>
+    <main class="flex-grow flex items-center justify-center">
+        <div class="bg-white bg-opacity-90 rounded-2xl shadow-2xl p-10 w-full max-w-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Classify Your Logs Instantly</h2>
+            <form id="logForm" class="space-y-6">
+                <div class="flex flex-col gap-4">
+                    <label class="font-semibold text-gray-700">Paste Log Text</label>
+                    <textarea id="logInput" rows="5" class="w-full p-4 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none text-lg" placeholder="Paste your log here..."></textarea>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <label class="font-semibold text-gray-700">Or Upload CSV File</label>
+                    <input type="file" id="fileInput" accept=".csv" class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <button type="submit" class="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg shadow-md hover:scale-105 transition-transform duration-200">Classify</button>
+            </form>
+            <div id="resultContainer" class="mt-8 hidden">
+                <h3 class="text-xl font-bold text-gray-700 mb-2">Classification Result:</h3>
+                <div id="result" class="p-4 rounded-lg bg-gradient-to-r from-green-400 to-blue-400 text-white font-semibold text-lg shadow"></div>
+            </div>
+        </div>
+    </main>
+    <footer class="py-4 text-center text-gray-300 bg-blue-950 bg-opacity-80">
+        &copy; 2025 Log Classification System. Crafted with <span class="text-pink-400">♥</span> by Hamza Meer.
+    </footer>
+    <script>
+        document.getElementById('logForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const logText = document.getElementById('logInput').value.trim();
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const resultContainer = document.getElementById('resultContainer');
+            const resultDiv = document.getElementById('result');
+            resultContainer.classList.add('hidden');
+
+            // Check for both or neither
+            if ((logText && file) || (!logText && !file)) {
+                resultDiv.textContent = 'Please provide either a log text or a CSV file, not both.';
+                resultContainer.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                if (logText) {
+                    // Send log text as JSON
+                    const response = await axios.post('http://127.0.0.1:8000/classify/', { log: logText }, {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    // Show full backend response for debugging
+                    resultDiv.textContent = response.data.result ? response.data.result : JSON.stringify(response.data);
+                    resultContainer.classList.remove('hidden');
+                } else if (file) {
+                    // Send file as FormData
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const response = await axios.post('http://127.0.0.1:8000/classify/', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        responseType: 'blob'
+                    });
+                    // Download the classified CSV
+                    const url = window.URL.createObjectURL(response.data);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'classified_output.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    resultDiv.textContent = 'CSV classified and downloaded.';
+                    resultContainer.classList.remove('hidden');
+                }
+            } catch (err) {
+                let errorMsg = 'Error: Unable to classify log.';
+                if (err.response && err.response.data && err.response.data.detail) {
+                    errorMsg += '\n' + err.response.data.detail;
+                } else if (err.message) {
+                    errorMsg += '\n' + err.message;
+                }
+                resultDiv.textContent = errorMsg;
+                resultContainer.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
